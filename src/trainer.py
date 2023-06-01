@@ -71,7 +71,8 @@ class Trainer():
                                                   viewdir[i:i+self.B].to(self.device),
                                                   shape_code, texture_code)
                         rgb_rays, _ = volume_rendering(sigmas, rgbs, z_vals.to(self.device))
-                        loss_l2 = torch.mean((rgb_rays - imgs[0, k, i:i+self.B].type_as(rgb_rays))**2)
+                        imgs_flat = imgs.view(imgs.shape[0], imgs.shape[1], -1, 3)
+                        loss_l2 = torch.mean((rgb_rays - imgs_flat[0, k, i:i+self.B].type_as(rgb_rays))**2)
                         if i == 0:
                             reg_loss = torch.norm(shape_code, dim=-1) + torch.norm(texture_code, dim=-1)
                             loss_reg = self.hpams['loss_reg_coef'] * torch.mean(reg_loss)
@@ -138,7 +139,7 @@ class Trainer():
         self.texture_codes.weight = nn.Parameter(torch.randn(d, embdim) / math.sqrt(embdim/2))
         self.shape_codes = self.shape_codes.to(self.device)
         self.texture_codes = self.texture_codes.to(self.device)
-        
+
     def make_dataloader(self, num_instances_per_obj, crop_img):
         # cat : whether it is 'srn_cars' or 'srn_chairs'
         # split: whether it is 'car_train', 'car_test' or 'car_val'

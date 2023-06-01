@@ -49,9 +49,7 @@ class Optimizer():
     def optimize_objs(self, instance_ids, lr=1e-2, lr_half_interval=50, save_img = True):
         logpath = os.path.join(self.save_dir, 'opt_hpams.json')
         hpam = {'instance_ids' : instance_ids, 'lr': lr, 'lr_half_interval': lr_half_interval,
-                '
-                
-                ': self.splits}
+                'splits': self.splits}
         with open(logpath, 'w') as f:
             json.dump(hpam, f, indent=2)
 
@@ -61,7 +59,7 @@ class Optimizer():
         self.optimized_texturecodes = torch.zeros(len(self.dataloader), self.mean_texture.shape[1])
         # Per object
         for num_obj, d in enumerate(self.dataloader):
-            focal, H, W, imgs, poses, obj_idx = d
+            focal, H, W, imgs, poses, instances, obj_idx = d
             tgt_imgs, tgt_poses = imgs[0, instance_ids], poses[0, instance_ids]
             self.nopts, self.lr_half_interval = 0, lr_half_interval
             shapecode = self.mean_shape.to(self.device).clone().detach().requires_grad_()
@@ -175,6 +173,8 @@ class Optimizer():
         if niters == 0:
             self.ssim_eval[obj_idx] = [ssim]
         else:
+            if obj_idx not in self.ssim_eval:
+                self.ssim_eval[obj_idx] = []
             self.ssim_eval[obj_idx].append(ssim)
 
     def log_eval_psnr(self, loss_per_img, niters, obj_idx):
@@ -182,6 +182,8 @@ class Optimizer():
         if niters == 0:
             self.psnr_eval[obj_idx] = [psnr]
         else:
+            if obj_idx not in self.psnr_eval:
+                self.psnr_eval[obj_idx] = []
             self.psnr_eval[obj_idx].append(psnr)
 
     def log_opt_psnr_time(self, loss_per_img, time_spent, niters, obj_idx):

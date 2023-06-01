@@ -50,21 +50,21 @@ class SRN():
         self.ids = np.sort([f.name for f in os.scandir(self.data_dir)])
         self.lenids = len(self.ids)
         self.num_instances_per_obj = num_instances_per_obj
-        self.train = True if splits.split('_')[1] == 'train' else False
+        self.train = True if splits.split('_')[-1] == 'train' else False
         self.crop_img = crop_img
 
     def __len__(self):
         return self.lenids
-    
+
     def __getitem__(self, idx):
         obj_id = self.ids[idx]
         if self.train:
             focal, H, W, imgs, poses, instances = self.return_train_data(obj_id)
             return focal, H, W, imgs, poses, instances, idx
         else:
-            focal, H, W, imgs, poses = self.return_test_val_data(obj_id)
-            return focal, H, W, imgs, poses, idx
-    
+            focal, H, W, imgs, poses, instances = self.return_test_val_data(obj_id)
+            return focal, H, W, imgs, poses, instances, idx
+
     def return_train_data(self, obj_id):
         pose_dir = os.path.join(self.data_dir, obj_id, 'pose')
         img_dir = os.path.join(self.data_dir, obj_id, 'rgb')
@@ -77,13 +77,13 @@ class SRN():
             imgs = imgs[:,32:-32,32:-32,:]
             H, W = H // 2, W//2
         return focal, H, W, imgs.reshape(self.num_instances_per_obj, -1,3), poses, instances
-    
+
     def return_test_val_data(self, obj_id):
         pose_dir = os.path.join(self.data_dir, obj_id, 'pose')
         img_dir = os.path.join(self.data_dir, obj_id, 'rgb')
         intrinsic_path = os.path.join(self.data_dir, obj_id, 'intrinsics.txt')
-        instances = np.arange(250)
+        instances = np.arange(250) # 50)
         poses = load_poses(pose_dir, instances)
         imgs = load_imgs(img_dir, instances)
         focal, H, W = load_intrinsic(intrinsic_path)
-        return focal, H, W, imgs, poses
+        return focal, H, W, imgs, poses, instances
